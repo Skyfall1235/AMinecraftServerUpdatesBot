@@ -4,8 +4,10 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
+using DotNetEnv;
 
+
+Console.WriteLine($"this Discord bot is now setting up...");
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddSingleton(new DiscordSocketConfig
@@ -23,7 +25,7 @@ builder.Services.AddSingleton(provider =>
 builder.Services.AddSingleton<JsonService>();
 builder.Services.AddSingleton<ConfigService>();
 builder.Services.AddSingleton<MinecraftService>();
-
+Console.WriteLine($"Services added, now building app...");
 using IHost host = builder.Build();
 
 var client = host.Services.GetRequiredService<DiscordSocketClient>();
@@ -36,8 +38,6 @@ client.Ready += async () =>
     var guilds = client.Guilds;
     if (guilds != null)
     {
-        await interactionService.AddModulesAsync(typeof(Program).Assembly, host.Services);
-        await interactionService.RegisterCommandsToGuildAsync(guild.Id);
         foreach (SocketGuild guild in guilds)
         {
             
@@ -51,7 +51,7 @@ client.Ready += async () =>
     {
         Console.WriteLine("⚠️ The bot isn't in any servers yet! Invite it to your server first.");
     }
-    Console.WriteLine($"✅ Connected all guilds! {client.Guilds.Count}");
+    Console.WriteLine($"✅ Connected all guilds! Count: {client.Guilds.Count}");
 };
 
 client.SlashCommandExecuted += async (interaction) =>
@@ -61,7 +61,11 @@ client.SlashCommandExecuted += async (interaction) =>
 };
 
 // Login and Start
-await client.LoginAsync(Discord.TokenType.Bot, "YOUR_BOT_TOKEN");
+Env.Load();
+string apiKey = Environment.GetEnvironmentVariable("DiscordToken") ?? throw new Exception("Discord token Environment variable not found");
+Console.WriteLine($"Discord token found, Bot will now begin!");
+
+await client.LoginAsync(Discord.TokenType.Bot, apiKey);
 await client.StartAsync();
 
 await host.RunAsync();

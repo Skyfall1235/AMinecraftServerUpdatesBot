@@ -41,7 +41,7 @@ namespace ASimpleMinecraftUpdatesBot.Services
 
     public class JsonService
     {
-        private readonly string _path = "data/config.json";
+        private readonly string _path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "config.json");
         public BotConfig Config { get; private set; }
 
         public JsonService()
