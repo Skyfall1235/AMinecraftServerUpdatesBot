@@ -1,4 +1,6 @@
-﻿namespace ASimpleMinecraftUpdatesBot.Services
+﻿using Discord.Interactions;
+
+namespace ASimpleMinecraftUpdatesBot.Services
 {
     public class BotConfig
     {
@@ -10,28 +12,57 @@
 
     public class ConfigService
     {
-        readonly JsonService? jsonService;
+        readonly JsonService? _jsonService;
 
         public ConfigService(JsonService service)
         {
-            jsonService = service ?? throw new ArgumentNullException(nameof(service));
+            _jsonService = service ?? throw new ArgumentNullException(nameof(service));
         }
 
-        public void UpdateConfig(string? name = "", string? ip = null, ushort? port = null, ulong? channelId = null)
+        public void UpdateConfig(ulong guildId, string? name = "", string? ip = null, ushort? port = null, ulong? channelId = null)
         {
             Console.WriteLine("Updating Config with new values");
-            var currentConfig = jsonService!.Config;
-            if (!string.IsNullOrEmpty(name)) currentConfig.ServerName = name;
-            if (!string.IsNullOrEmpty(ip)) currentConfig.MinecraftIp = ip;
+            if (!_jsonService!.Configs.TryGetValue(guildId, out var currentConfig))
+            {
+                currentConfig = new BotConfig
+                {
+                    ServerName = "New Minecraft Server",
+                    Port = 25565
+                };
+                _jsonService.Configs.TryAdd(guildId, currentConfig);
+            }
+
+            if (!string.IsNullOrWhiteSpace(name)) currentConfig.ServerName = name;
+            if (!string.IsNullOrWhiteSpace(ip)) currentConfig.MinecraftIp = ip;
             if (port.HasValue) currentConfig.Port = port.Value;
             if (channelId.HasValue) currentConfig.TargetChannelId = channelId.Value;
 
-            jsonService.SaveConfig(currentConfig);
+            _jsonService.SaveConfig(guildId, currentConfig);
+            Console.WriteLine($"[Config] Success: {currentConfig.ServerName} updated.");
         }
 
         public void SaveToFile()
         {
-            jsonService?.SaveTextToFile();
+            _jsonService?.SaveTextToFile();
+        }
+
+        public BotConfig? GetConfigFromContext(SocketInteractionContext context)
+        {
+            Console.WriteLine($"Reteriving config from service via Discord Context...");
+            ulong guildId = context.Guild.Id;
+            return RetriveConfigFromJson(guildId);
+        }
+
+        private BotConfig? RetriveConfigFromJson(ulong guildId)
+        {
+            bool success = _jsonService!.Configs.TryGetValue(guildId, out var serverConfig);
+            if (!success || serverConfig is null || serverConfig is not BotConfig)
+            {
+                Console.WriteLine($"Config for server {guildId} Not found.");
+                return null;
+            }
+            Console.WriteLine($"Found config for server: {guildId}");
+            return serverConfig;
         }
     }
 }

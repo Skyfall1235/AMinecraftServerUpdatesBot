@@ -1,4 +1,5 @@
 ﻿using ASimpleMinecraftUpdatesBot.Services;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 
@@ -6,14 +7,12 @@ namespace ASimpleMinecraftUpdatesBot.Modules
 {
     public class MinecraftModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly JsonService _jsonService;
-        private readonly MinecraftService _mcService;
+        private readonly MineStatService _mcService;
         private readonly ConfigService _configService;
 
 
-        public MinecraftModule(JsonService jsonService, MinecraftService mcService, ConfigService configService)
+        public MinecraftModule(MineStatService mcService, ConfigService configService)
         {
-            _jsonService = jsonService;
             _mcService = mcService;
             _configService = configService;
         }
@@ -22,7 +21,17 @@ namespace ASimpleMinecraftUpdatesBot.Modules
         public async Task StatusCommandAsync()
         {
             await DeferAsync();
-            var config = _jsonService.Config;
+            ulong guildId = Context.Guild.Id;
+            string guildName = Context.Guild.Name;
+            BotConfig config = _configService.GetConfigFromContext(Context);
+            if(config is null)
+            {
+                await FollowupAsync("❌ **Server Config Not Found.**");
+                return;
+            }
+
+            Console.WriteLine($"Status command run in: {guildName} ({guildId})");
+            
             var status = await _mcService.GetFullStatus(config);
             if (status.IsOnline)
             {
@@ -35,6 +44,7 @@ namespace ASimpleMinecraftUpdatesBot.Modules
         }
 
         [SlashCommand("setup", "Configure the Minecraft server settings.")]
+        [DefaultMemberPermissions(GuildPermission.Administrator)]
         public async Task SetupCommandAsync(
             [Summary("name", "The name of the server")] string serverName,
             [Summary("ip", "The IP address of the server")] string ip,
@@ -44,7 +54,8 @@ namespace ASimpleMinecraftUpdatesBot.Modules
             await DeferAsync(ephemeral: true);
             try
             {
-                _configService.UpdateConfig(serverName, ip, port, channel?.Id);
+                ulong guildId = Context.Guild.Id;
+                _configService.UpdateConfig(guildId, serverName, ip, port, channel?.Id);
                 await FollowupAsync($"✅ **Settings Saved!**\nIP: `{ip}`\nPort: `{port}`\nChannel: {channel?.Mention ?? "None"}");
             }
             catch (Exception ex)
@@ -57,9 +68,16 @@ namespace ASimpleMinecraftUpdatesBot.Modules
         public async Task PingHostAsync()
         {
             await DeferAsync();
-            //ping the ip associated with it
-            bool isAlive = await _mcService.PingComputerAsync(_jsonService.Config.MinecraftIp);
+            BotConfig config = _configService.GetConfigFromContext(Context);
+            if (config is null)
+            {
+                await FollowupAsync("❌ **Server Config Not Found.**");
+                return;
+            }
+            bool isAlive = await _mcService.PingComputerAsync(config.MinecraftIp);
             await FollowupAsync(isAlive ? "🖥️ Host is reachable!" : "💀 Host is unreachable (Offline or Firewall blocking).");
         }
+
+        
     }
 }

@@ -22,9 +22,11 @@ builder.Services.AddSingleton(provider =>
     var client = provider.GetRequiredService<DiscordSocketClient>();
     return new InteractionService(client);
 });
+
 builder.Services.AddSingleton<JsonService>();
 builder.Services.AddSingleton<ConfigService>();
-builder.Services.AddSingleton<MinecraftService>();
+builder.Services.AddSingleton<MineStatService>();
+
 Console.WriteLine($"Services added, now building app...");
 using IHost host = builder.Build();
 
@@ -39,10 +41,8 @@ client.Ready += async () =>
     if (guilds != null)
     {
         foreach (SocketGuild guild in guilds)
-        {
-            
+        {         
             await interactionService.RegisterCommandsToGuildAsync(guild.Id);
-
             Console.WriteLine($"✅ Registered {interactionService.Modules.Count()} modules to {guild.Name}");
             Console.WriteLine($"✅ Connected to {guild.Name} ({guild.Id}) and registered commands!");
         }
@@ -65,7 +65,7 @@ Env.Load();
 string apiKey = Environment.GetEnvironmentVariable("DiscordToken") ?? throw new Exception("Discord token Environment variable not found");
 Console.WriteLine($"Discord token found, Bot will now begin!");
 
-await client.LoginAsync(Discord.TokenType.Bot, apiKey);
+await client.LoginAsync(TokenType.Bot, apiKey);
 await client.StartAsync();
 
 await host.RunAsync();

@@ -5,7 +5,7 @@ using System.Net.Sockets;
 
 namespace ASimpleMinecraftUpdatesBot.Services
 {
-    public class MinecraftService
+    public class MineStatService
     {
         public async Task<bool> GetAliveStatus(BotConfig config)
         {

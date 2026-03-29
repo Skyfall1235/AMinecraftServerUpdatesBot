@@ -5,27 +5,29 @@ namespace ASimpleMinecraftUpdatesBot.Services
     public class JsonService
     {
         private readonly string _path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "config.json");
-        public BotConfig Config { get; private set; }
+
+        public Dictionary<ulong, BotConfig> Configs { get; private set; }
 
         public JsonService()
         {
             if (!Directory.Exists("data")) Directory.CreateDirectory("data");
-            Config = Load();
+            Configs = new();
+            Configs = Load();
         }
 
-        public BotConfig Load()
+        public Dictionary<ulong, BotConfig> Load()
         {
-            if (!File.Exists(_path)) return new BotConfig();
+            if (!File.Exists(_path)) return new Dictionary<ulong, BotConfig>();
             var json = File.ReadAllText(_path);
-            return JsonSerializer.Deserialize<BotConfig>(json) ?? new BotConfig();
+            return JsonSerializer.Deserialize<Dictionary<ulong, BotConfig>>(json) ?? new Dictionary<ulong, BotConfig>();
         }
 
-        public void SaveConfig(BotConfig newConfig)
+        public void SaveConfig(ulong guildId, BotConfig newConfig)
         {
-            Config = newConfig;
+            Configs.Add(guildId, newConfig);
             SaveTextToFile();
         }
 
-        public void SaveTextToFile() => File.WriteAllText(_path, JsonSerializer.Serialize(Config, new JsonSerializerOptions { WriteIndented = true }));
+        public void SaveTextToFile() => File.WriteAllText(_path, JsonSerializer.Serialize(Configs, new JsonSerializerOptions { WriteIndented = true }));
     }
 }
