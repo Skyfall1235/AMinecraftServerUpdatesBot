@@ -9,12 +9,22 @@ namespace ASimpleMinecraftUpdatesBot.Modules
     {
         private readonly MineStatService _mcService;
         private readonly ConfigService _configService;
+        private readonly InteractionService _interactionService;
 
 
-        public MinecraftModule(MineStatService mcService, ConfigService configService)
+        public MinecraftModule(MineStatService mcService, ConfigService configService, InteractionService interactionService)
         {
             _mcService = mcService;
             _configService = configService;
+            _interactionService = interactionService;
+        }
+
+        [SlashCommand("help", "Get a list of all slash commands this bot has. ")]
+        public async Task ListCommands()
+        {
+            var commands = _interactionService.SlashCommands;
+            var commandList = string.Join("\n", commands.Select(c => $"**/{c.Name}** - {c.Description}"));
+            await RespondAsync($"### Available Commands:\n{commandList}");
         }
 
         [SlashCommand("status", "Get the current status of the Minecraft server.")]
@@ -23,7 +33,7 @@ namespace ASimpleMinecraftUpdatesBot.Modules
             await DeferAsync();
             ulong guildId = Context.Guild.Id;
             string guildName = Context.Guild.Name;
-            BotConfig config = _configService.GetConfigFromContext(Context);
+            BotConfig? config = _configService.GetConfigFromContext(Context);
             if(config is null)
             {
                 await FollowupAsync("❌ **Server Config Not Found.**");
@@ -68,7 +78,7 @@ namespace ASimpleMinecraftUpdatesBot.Modules
         public async Task PingHostAsync()
         {
             await DeferAsync();
-            BotConfig config = _configService.GetConfigFromContext(Context);
+            BotConfig? config = _configService.GetConfigFromContext(Context);
             if (config is null)
             {
                 await FollowupAsync("❌ **Server Config Not Found.**");
@@ -83,9 +93,7 @@ namespace ASimpleMinecraftUpdatesBot.Modules
             [Summary("Hide Message?", "Is this a public or private query?")] bool isEphemeral = true)
         {
             await DeferAsync(ephemeral: isEphemeral); //we will be ephemeral but give the option to have it be static
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-            BotConfig config = _configService.GetConfigFromContext(Context);
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+            BotConfig? config = _configService.GetConfigFromContext(Context);
             if (config is not null)
             {
                 await FollowupAsync($"❌ **Server Address:** {config.MinecraftIp}:{config.Port}");
@@ -98,9 +106,7 @@ namespace ASimpleMinecraftUpdatesBot.Modules
             [Summary("Hide Message?", "Is this a public or private query?")] bool isEphemeral = true)
         {
             await DeferAsync(ephemeral: isEphemeral); //we will be ephemeral but give the option to have it be static
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-            BotConfig config = _configService.GetConfigFromContext(Context);
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+            BotConfig? config = _configService.GetConfigFromContext(Context);
             if (config is null)
             {
                 await FollowupAsync("❌ **Server Config Not Found.**");
