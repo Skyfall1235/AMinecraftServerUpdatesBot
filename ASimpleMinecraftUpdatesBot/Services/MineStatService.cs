@@ -30,6 +30,22 @@ namespace ASimpleMinecraftUpdatesBot.Services
             Console.WriteLine($"Full Status: MC Server has {players}");
             return status;
         }
+        public async Task<string[]> GetPlayerList(BotConfig config)
+        {
+            MineStat ms = await GetMineStat(config.MinecraftIp, config.Port);
+            if (!ms.ServerUp)
+            {
+                Console.WriteLine($"Full Status: MC Server Offline");
+                return [];
+            }
+            return ms.PlayerList;
+        }
+
+        public async Task<bool> GetServerUp(BotConfig config)
+        {
+            MineStat ms = await GetMineStat(config.MinecraftIp, config.Port);
+            return ms.ServerUp;
+        }
 
         private async Task<MineStat> GetMineStat(string ip, ushort port)
         {

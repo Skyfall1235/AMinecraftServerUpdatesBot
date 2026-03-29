@@ -78,6 +78,45 @@ namespace ASimpleMinecraftUpdatesBot.Modules
             await FollowupAsync(isAlive ? "🖥️ Host is reachable!" : "💀 Host is unreachable (Offline or Firewall blocking).");
         }
 
-        
+        [SlashCommand("address", "Get your servers currently configured MC address and port.")]
+        public async Task GetServerAddressAndPort(
+            [Summary("Hide Message?", "Is this a public or private query?")] bool isEphemeral = true)
+        {
+            await DeferAsync(ephemeral: isEphemeral); //we will be ephemeral but give the option to have it be static
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+            BotConfig config = _configService.GetConfigFromContext(Context);
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+            if (config is not null)
+            {
+                await FollowupAsync($"❌ **Server Address:** {config.MinecraftIp}:{config.Port}");
+                return;
+            }
+        }
+
+        [SlashCommand("playerlist", "Get your servers current player list.")]
+        public async Task GetPlayerList(
+            [Summary("Hide Message?", "Is this a public or private query?")] bool isEphemeral = true)
+        {
+            await DeferAsync(ephemeral: isEphemeral); //we will be ephemeral but give the option to have it be static
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+            BotConfig config = _configService.GetConfigFromContext(Context);
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+            if (config is null)
+            {
+                await FollowupAsync("❌ **Server Config Not Found.**");
+                return;
+            }
+            bool isAlive = await _mcService.GetAliveStatus(config);
+            if (!isAlive)
+            {
+                await FollowupAsync("❌ **Server is not online.**");
+                return;
+            }
+            string[] playerList = await _mcService.GetPlayerList(config);
+            string playerListReadable = string.Join(", ", playerList);
+            await FollowupAsync($"**Online Players:** {playerListReadable}");
+        }
+
+
     }
 }
